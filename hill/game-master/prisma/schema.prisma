@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id        String   @id @db.VarChar(12)
+  hostKey   String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  seats     Seat[]
+}
+
+model Seat {
+  id        String   @id @db.VarChar(64) // seatToken acts as id
+  seatId    String   @db.VarChar(32)     // human-readable seat label (seat-1, etc.)
+  joinedAt  DateTime @default(now())
+
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+}
+
+

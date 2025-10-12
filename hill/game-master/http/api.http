@@ -1,0 +1,30 @@
+@base=http://localhost:3001
+
+### Health
+GET {{base}}/health
+
+### Start Game
+POST {{base}}/startGame
+Content-Type: application/json
+
+{
+  "nickname": "Alice"
+}
+
+### Create Room
+POST {{base}}/createRoom
+
+### Join Room
+# @prompt roomId Enter ROOM ID
+POST {{base}}/joinRoom
+Content-Type: application/json
+
+{
+  "roomId": "{{roomId}}"
+}
+
+### Get Room Status
+# @prompt roomId Enter ROOM ID
+GET {{base}}/rooms/{{roomId}}
+
+

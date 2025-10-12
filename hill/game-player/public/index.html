@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>game-player demo</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; }
+      label { display: block; margin-top: 12px; }
+      input, button { font-size: 14px; padding: 6px 8px; }
+      #log { margin-top: 16px; padding: 8px; border: 1px solid #ccc; height: 240px; overflow: auto; background: #fafafa; }
+      .row { margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>game-player demo</h1>
+    <div class="row">
+      <label>Server URL: <input id="server" value="http://localhost:3001" style="width: 320px" /></label>
+      <button id="connect">Connect</button>
+    </div>
+    <div class="row">
+      <button id="createRoom" disabled>Create Room</button>
+      <label>Room ID: <input id="roomId" placeholder="ABC123" /></label>
+      <button id="getSeat" disabled>Get Seat</button>
+      <label>Seat Token: <input id="seatToken" placeholder="(auto)" style="width: 300px" /></label>
+      <button id="join" disabled>Join Room</button>
+    </div>
+    <div class="row">
+      <label>Message: <input id="message" placeholder="hello" style="width: 320px" /></label>
+      <button id="send" disabled>Send</button>
+    </div>
+    <div id="log"></div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-dv3OsW3vd7o0tG0R4Ov5tYiD8Fso+W1FA58ZC/4S0JgVZ0uGMpu5bq+05aBvaG1E" crossorigin="anonymous"></script>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const log = (msg) => { const el = document.createElement('div'); el.textContent = msg; $('log').appendChild(el); $('log').scrollTop = $('log').scrollHeight; };
+      let socket = null; let currentRoomId = '';
+
+      $('connect').onclick = () => {
+        if (socket && socket.connected) { log('already connected'); return; }
+        const url = $('server').value.trim();
+        socket = io(url, { transports: ['websocket'] });
+        socket.on('connect', () => { log('connected: ' + socket.id); $('createRoom').disabled = false; $('getSeat').disabled = false; });
+        socket.on('disconnect', () => { log('disconnected'); $('createRoom').disabled = true; $('getSeat').disabled = true; $('join').disabled = true; $('send').disabled = true; });
+        socket.on('room:system', (evt) => log('[system] ' + JSON.stringify(evt)));
+        socket.on('room:message', (evt) => log('[message] ' + JSON.stringify(evt)));
+        socket.on('connect_error', (err) => log('connect_error: ' + err.message));
+      };
+
+      $('createRoom').onclick = async () => {
+        const base = $('server').value.trim();
+        try {
+          const res = await fetch(base + '/rooms', { method: 'POST' });
+          const data = await res.json();
+          $('roomId').value = data.roomId;
+          log('created room: ' + data.roomId + ' (hostKey hidden)');
+        } catch (e) { log('create failed: ' + e.message); }
+      };
+
+      $('getSeat').onclick = async () => {
+        const base = $('server').value.trim();
+        const roomId = $('roomId').value.trim();
+        if (!roomId) { log('enter room id'); return; }
+        try {
+          const res = await fetch(base + '/rooms/' + roomId + '/seats', { method: 'POST' });
+          const data = await res.json();
+          if (data.seatToken) { $('seatToken').value = data.seatToken; log('seat granted: ' + data.seatId); $('join').disabled = false; }
+          else { log('seat failed: ' + JSON.stringify(data)); }
+        } catch (e) { log('seat failed: ' + e.message); }
+      };
+
+      $('join').onclick = () => {
+        const roomId = $('roomId').value.trim();
+        const seatToken = $('seatToken').value.trim();
+        if (!roomId || !seatToken) { log('enter room id and get seat'); return; }
+        socket.emit('room:join', { roomId, seatToken }, (ack) => {
+          if (ack && ack.ok) { currentRoomId = ack.roomId; $('send').disabled = false; log('joined room: ' + ack.roomId + ' as ' + ack.seatId); }
+          else { log('join failed: ' + (ack && ack.error)); }
+        });
+      };
+
+      $('send').onclick = () => {
+        const message = $('message').value;
+        if (!currentRoomId || !message) return;
+        socket.emit('room:message', { roomId: currentRoomId, message });
+        $('message').value = '';
+      };
+    </script>
+  </body>
+  </html>
+
+
