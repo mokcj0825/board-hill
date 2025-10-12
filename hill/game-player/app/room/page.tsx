@@ -1,23 +1,23 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { CreateRoomResponse, JoinRoomRequest, JoinRoomResponse } from '../../types';
 
 export default function RoomPage() {
-  const [apiBase, setApiBase] = useState('');
+  const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_BASE || '');
   const [roomId, setRoomId] = useState('');
   const [seatToken, setSeatToken] = useState('');
   const [seatId, setSeatId] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('apiBase') || 'http://localhost:3001';
-    setApiBase(stored);
+    // if NEXT_PUBLIC_API_BASE is not set, allow user to input manually
   }, []);
 
   const createRoom = async () => {
     setError('');
     try {
       const res = await fetch(`${apiBase}/createRoom`, { method: 'POST' });
-      const data = await res.json();
+      const data = (await res.json()) as CreateRoomResponse;
       if (!res.ok) throw new Error(data?.error || 'createRoom failed');
       setRoomId(data.roomId);
     } catch (e: any) { setError(e.message || String(e)); }
@@ -29,14 +29,12 @@ export default function RoomPage() {
       const res = await fetch(`${apiBase}/joinRoom`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId })
+        body: JSON.stringify({ roomId } as JoinRoomRequest)
       });
-      const data = await res.json();
+      const data = (await res.json()) as JoinRoomResponse;
       if (!res.ok) throw new Error(data?.error || 'joinRoom failed');
       setSeatToken(data.seatToken);
       setSeatId(data.seatId);
-      sessionStorage.setItem('seatToken', data.seatToken);
-      sessionStorage.setItem('roomId', data.roomId);
     } catch (e: any) { setError(e.message || String(e)); }
   };
 

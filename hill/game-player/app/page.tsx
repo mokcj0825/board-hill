@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
+import type { StartGameRequest, StartGameResponse } from '../../types';
 import { useRouter } from 'next/navigation';
 
 export default function Page() {
   const router = useRouter();
-  const [apiBase, setApiBase] = useState('http://localhost:3001');
+  const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_BASE || '');
   const [nickname, setNickname] = useState('');
   const [playerId, setPlayerId] = useState('');
   const [error, setError] = useState('');
@@ -15,13 +16,11 @@ export default function Page() {
       const res = await fetch(`${apiBase}/startGame`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname })
+        body: JSON.stringify({ nickname } as StartGameRequest)
       });
-      const data = await res.json();
+      const data = (await res.json()) as StartGameResponse;
       if (!res.ok) throw new Error(data?.error || 'startGame failed');
       setPlayerId(data.playerId);
-      sessionStorage.setItem('playerId', data.playerId);
-      sessionStorage.setItem('apiBase', apiBase);
       router.push('/room');
     } catch (e: any) {
       setError(e.message || String(e));
