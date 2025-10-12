@@ -1,0 +1,6 @@
+# .gcloudignore helps Cloud Run/Build ignore files when uploading source
+.git
+node_modules
+hill/game-player
+.idea
+.DS_Store
