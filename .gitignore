@@ -26,4 +26,12 @@ logs
 .DS_Store
 Thumbs.db
 
+# Cloud SQL Proxy
+cloud-sql-proxy
+**/cloud-sql-proxy
+
+# Temp files
+*.tmp
+/tmp/
+
 
