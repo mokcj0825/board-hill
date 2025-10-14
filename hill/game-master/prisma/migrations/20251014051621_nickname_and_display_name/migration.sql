@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Seat" ALTER COLUMN "nickname" DROP DEFAULT,
+ALTER COLUMN "displayName" DROP DEFAULT;

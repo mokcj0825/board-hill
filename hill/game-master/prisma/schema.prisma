@@ -16,12 +16,14 @@ model Room {
 }
 
 model Seat {
-  id        String   @id @db.VarChar(64) // seatToken acts as id
-  seatId    String   @db.VarChar(32)     // human-readable seat label (seat-1, etc.)
-  joinedAt  DateTime @default(now())
+  id          String   @id @db.VarChar(64) // seatToken acts as id
+  seatId      String   @db.VarChar(32)     // human-readable seat label (seat-1, etc.)
+  nickname    String   @db.VarChar(64)     // player's chosen nickname
+  displayName String   @db.VarChar(100)    // nickname + hash (e.g. "Alice#a1b2")
+  joinedAt    DateTime @default(now())
 
-  roomId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
 }

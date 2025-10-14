@@ -1,46 +1,124 @@
 'use client';
-import { useState } from 'react';
-import type { StartGameRequest, StartGameResponse } from '../../types';
-import { useRouter } from 'next/navigation';
 
-export default function Page() {
-  const router = useRouter();
-  const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_BASE || '');
-  const [nickname, setNickname] = useState('');
-  const [playerId, setPlayerId] = useState('');
-  const [error, setError] = useState('');
-
-  const startGame = async () => {
-    setError('');
-    try {
-      const res = await fetch(`${apiBase}/startGame`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname } as StartGameRequest)
-      });
-      const data = (await res.json()) as StartGameResponse;
-      if (!res.ok) throw new Error(data?.error || 'startGame failed');
-      setPlayerId(data.playerId);
-      router.push('/room');
-    } catch (e: any) {
-      setError(e.message || String(e));
-    }
-  };
-
+export default function HomePage() {
   return (
-    <main>
-      <h1>Start Game</h1>
-      <div style={{ marginTop: 12 }}>
-        <label>API Base: <input value={apiBase} onChange={(e) => setApiBase(e.target.value)} style={{ width: 320 }} /></label>
+    <main style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <h1 style={{ fontSize: 48, marginBottom: 16, color: '#111' }}>
+          🎲 Board Hill
+        </h1>
+        <p style={{ fontSize: 18, color: '#666' }}>
+          多人桌游平台 - 在线游戏体验
+        </p>
       </div>
-      <div style={{ marginTop: 12 }}>
-        <label>Nickname: <input value={nickname} onChange={(e) => setNickname(e.target.value)} /></label>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 24,
+          marginBottom: 32,
+        }}
+      >
+        <a
+          href="/start-game"
+          style={{
+            display: 'block',
+            padding: 32,
+            backgroundColor: '#0070f3',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: 8,
+            textAlign: 'center',
+            transition: 'transform 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(-4px)';
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(0)';
+          }}
+        >
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎮</div>
+          <h2 style={{ fontSize: 24, marginBottom: 8 }}>创建游戏</h2>
+          <p style={{ fontSize: 14, opacity: 0.9 }}>
+            创建一个新房间，邀请朋友一起玩
+          </p>
+        </a>
+
+        <a
+          href="/join-room"
+          style={{
+            display: 'block',
+            padding: 32,
+            backgroundColor: '#10b981',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: 8,
+            textAlign: 'center',
+            transition: 'transform 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(-4px)';
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(0)';
+          }}
+        >
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚪</div>
+          <h2 style={{ fontSize: 24, marginBottom: 8 }}>加入房间</h2>
+          <p style={{ fontSize: 14, opacity: 0.9 }}>
+            使用房间码加入现有游戏
+          </p>
+        </a>
       </div>
-      <div style={{ marginTop: 12 }}>
-        <button onClick={startGame} disabled={!nickname.trim()}>Start Game</button>
+
+      <div
+        style={{
+          padding: 24,
+          backgroundColor: '#f9fafb',
+          borderRadius: 8,
+          marginBottom: 24,
+        }}
+      >
+        <h3 style={{ marginTop: 0, fontSize: 20, marginBottom: 16 }}>
+          🎯 如何开始
+        </h3>
+        <ol style={{ paddingLeft: 24, marginBottom: 0 }}>
+          <li style={{ marginBottom: 12 }}>
+            <strong>创建游戏：</strong>点击"创建游戏"按钮，输入昵称后创建房间
+          </li>
+          <li style={{ marginBottom: 12 }}>
+            <strong>分享房间码：</strong>将 6 位房间码分享给你的朋友
+          </li>
+          <li style={{ marginBottom: 12 }}>
+            <strong>加入游戏：</strong>朋友点击"加入房间"，输入房间码即可加入
+          </li>
+          <li>
+            <strong>开始游玩：</strong>等待所有玩家加入后，开始游戏
+          </li>
+        </ol>
       </div>
-      {playerId && <p style={{ marginTop: 12 }}>Temp playerId: {playerId}</p>}
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+
+      <div
+        style={{
+          padding: 24,
+          backgroundColor: '#fef3c7',
+          borderRadius: 8,
+          border: '1px solid #fbbf24',
+        }}
+      >
+        <h3 style={{ marginTop: 0, fontSize: 18, marginBottom: 12 }}>
+          💡 测试提示
+        </h3>
+        <p style={{ marginBottom: 8, fontSize: 14 }}>
+          <strong>多人测试：</strong>{' '}
+          可以在同一浏览器的不同标签页中打开多个玩家会话。
+        </p>
+        <p style={{ marginBottom: 0, fontSize: 14 }}>
+          每个标签页都是独立的玩家，可以方便地测试多人游戏功能。
+        </p>
+      </div>
     </main>
   );
 }
