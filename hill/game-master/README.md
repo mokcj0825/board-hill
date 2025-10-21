@@ -13,34 +13,77 @@ cd hill/game-master
 npm install
 ```
 
-### 2. 配置环境变量
+### 2. 启动本地数据库（推荐用于开发）
 
-复制 `.env.example` 创建 `.env` 文件：
+**使用 Docker Compose (最简单):**
 
 ```bash
-cp env.example .env
+# 在项目根目录启动 PostgreSQL
+docker-compose up -d
+
+# 查看数据库状态
+docker-compose ps
 ```
 
-编辑 `.env`，配置数据库连接：
+这会启动一个 PostgreSQL 容器，数据持久化在 Docker volume 中。
+
+### 3. 配置环境变量
+
+将 `convert-to-env.txt` 重命名为 `.env`：
+
+```bash
+# 在 hill/game-master 目录下
+cp convert-to-env.txt .env
+```
+
+默认配置已指向 Docker 数据库：
 
 ```env
-DATABASE_URL="postgresql://username:password@127.0.0.1:5432/dbname?schema=public"
+DATABASE_URL="postgresql://gamemaster:dev_password@localhost:5432/gamemaster_db?schema=public"
 PORT=3001
 ```
 
-### 3. 设置数据库
+### 4. 初始化数据库
 
 ```bash
 # 生成 Prisma Client
 npx prisma generate
 
 # 运行数据库迁移
-npx prisma migrate dev
+npm run prisma:deploy
 ```
 
-### 4. 启动服务
+### 5. 启动服务
 
-#### 方式一：使用 Cloud SQL（推荐用于生产环境）
+```bash
+npm run dev
+```
+
+服务将在 `http://localhost:3001` 启动。
+
+---
+
+## 🔄 其他运行方式
+
+### 方式一：Docker 本地开发（推荐）
+
+适合日常开发，零云成本。
+
+```bash
+# 启动数据库
+docker-compose up -d
+
+# 启动应用
+cd hill/game-master
+npm run dev
+
+# 停止数据库
+docker-compose down
+```
+
+### 方式二：使用 Cloud SQL（生产环境）
+
+适合测试生产环境配置。
 
 **终端 1 - 启动 Cloud SQL Proxy:**
 ```bash
@@ -48,19 +91,9 @@ npx prisma migrate dev
 ./cloud-sql-proxy YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE --port 5432
 ```
 
-**终端 2 - 启动后端服务:**
+**终端 2 - 修改 .env 并启动:**
 ```bash
-cd hill/game-master
-npm run dev
-```
-
-服务将在 `http://localhost:3001` 启动
-
-#### 方式二：使用本地数据库
-
-如果使用本地 PostgreSQL，直接启动后端即可：
-
-```bash
+# 修改 DATABASE_URL 为 Cloud SQL 配置
 cd hill/game-master
 npm run dev
 ```
@@ -77,28 +110,30 @@ curl -X POST http://localhost:3001/createRoom
 
 ## 🛑 关闭服务
 
-**完整关闭所有服务（推荐睡觉前执行）：**
+**使用 Docker 时：**
+
+```bash
+# 关闭后端服务 (Ctrl+C 或)
+pkill -f "node server.js"
+
+# 停止 Docker 数据库（保留数据）
+docker-compose stop
+
+# 完全删除容器和数据卷（谨慎使用）
+docker-compose down -v
+```
+
+**使用 Cloud SQL 时（重要！避免产生费用）：**
 
 ```bash
 # 关闭后端服务
 pkill -f "node server.js"
 
-# 关闭 Cloud SQL Proxy（重要！避免产生费用）
+# 关闭 Cloud SQL Proxy
 pkill -f "cloud-sql-proxy"
 
-# 如果前端也在运行
-pkill -f "next dev"
-```
-
-**验证所有服务已关闭：**
-
-```bash
-# 确认 Cloud SQL Proxy 已关闭
+# 验证 Proxy 已关闭
 ps aux | grep cloud-sql-proxy | grep -v grep
-
-# 确认后端已关闭
-curl http://localhost:3001/health
-# 应该返回连接失败
 ```
 
 ## 📋 常用命令
@@ -140,7 +175,15 @@ npx prisma db pull
 
 ## 💾 DATABASE_URL 配置格式
 
-### 本地开发（通过 Cloud SQL Proxy）
+### 本地 Docker（开发推荐）
+
+```env
+DATABASE_URL="postgresql://gamemaster:dev_password@localhost:5432/gamemaster_db?schema=public"
+```
+
+配合 `docker-compose.yml` 使用，无需额外配置。
+
+### 本地 Cloud SQL Proxy（测试生产环境）
 
 ```env
 DATABASE_URL="postgresql://username:password@127.0.0.1:5432/dbname?schema=public"
@@ -151,13 +194,7 @@ DATABASE_URL="postgresql://username:password@127.0.0.1:5432/dbname?schema=public
 ./cloud-sql-proxy YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE --port 5432
 ```
 
-### 本地 PostgreSQL
-
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/dbname?schema=public"
-```
-
-### Cloud Run 部署
+### Cloud Run 生产部署
 
 ```env
 DATABASE_URL="postgresql://username:password@127.0.0.1:5432/dbname?schema=public"
@@ -218,16 +255,21 @@ gcloud run jobs execute migrate-job --region YOUR_REGION
 
 ### 成本控制
 
-1. **开发完成后务必关闭 Cloud SQL Proxy**
-   - 避免产生不必要的数据库连接费用
-   - 使用 `pkill -f "cloud-sql-proxy"` 关闭
+1. **本地开发使用 Docker**
+   - 零云成本，数据持久化在本地
+   - 长时间不用可以 `docker-compose down` 释放资源
 
-2. **优化数据库查询**
+2. **测试生产环境时才使用 Cloud SQL**
+   - 开发完成后务必关闭 Cloud SQL Proxy
+   - 使用 `pkill -f "cloud-sql-proxy"` 关闭
+   - 避免产生不必要的连接费用
+
+3. **优化数据库查询**
    - 使用 WebSocket 推送而非轮询
    - 避免频繁的 SQL 查询
    - 当前实现：玩家列表通过 Socket.io 实时推送（无需重复查询）
 
-3. **Cloud Run 自动扩缩容**
+4. **Cloud Run 自动扩缩容**
    - 设置最小实例为 0，无流量时自动关闭
    - 使用请求超时自动清理长连接
 

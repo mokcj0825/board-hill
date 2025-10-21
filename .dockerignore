@@ -6,5 +6,9 @@ yarn.lock
 .idea
 hill/game-player
 todo
+.env
+.env.*
+docker-compose.yml
+DOCKER_SETUP.md
 
 
