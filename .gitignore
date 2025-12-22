@@ -6,8 +6,6 @@ yarn-error.log*
 .pnpm-store/
 
 # Env
-.env
-**/.env
 **/.env.local
 
 # Prisma
